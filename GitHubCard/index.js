@@ -2,17 +2,30 @@
            (replacing the palceholder with your Github name):
            https://api.github.com/users/<your name>
 */
-
+//const data = axios.get("https://api.github.com/users/jambis");
 /* Step 2: Inspect and study the data coming back, this is YOUR 
    github info! You will need to understand the structure of this 
    data in order to use it to build your component function 
 
    Skip to Step 3.
 */
+//console.log(data);
 
 /* Step 4: Pass the data received from Github into your function, 
            create a new component and add it to the DOM as a child of .cards
 */
+const cardsDiv = document.querySelector(".cards");
+
+axios
+  .get("https://api.github.com/users/jambis")
+  .then(res => {
+    console.log(res);
+    const newCard = createCard(res.data);
+    cardsDiv.appendChild(newCard);
+  })
+  .catch(err => {
+    console.log("The data was not returned", err);
+  });
 
 /* Step 5: Now that you have your own card getting added to the DOM, either 
           follow this link in your browser https://api.github.com/users/<Your github name>/followers 
@@ -45,6 +58,51 @@ const followersArray = [];
 </div>
 
 */
+
+function createCard(data) {
+  const cardDiv = document.createElement("div");
+  const cardImg = document.createElement("img");
+  const cardInfoDiv = document.createElement("div");
+  const nameH3 = document.createElement("h3");
+  const userNameP = document.createElement("p");
+  const locationP = document.createElement("p");
+  const profileP = document.createElement("p");
+  const profileA = document.createElement("a");
+  const followersP = document.createElement("p");
+  const followingP = document.createElement("p");
+  const bioP = document.createElement("p");
+
+  cardDiv.classList.add("card");
+  cardInfoDiv.classList.add("card-info");
+  nameH3.classList.add("name");
+  userNameP.classList.add("username");
+
+  cardImg.src = data.avatar_url;
+  nameH3.textContent = data.name;
+  userNameP.textContent = data.login;
+  locationP.textContent = data.location;
+  profileP.textContent = "Profile: ";
+  profileA.textContent = data.html_url;
+  profileA.href = data.html_url;
+  followersP.textContent = data.followers;
+  followingP.textContent = data.following;
+  bioP.textContent = data.bio;
+
+  cardDiv.append(cardImg, cardInfoDiv);
+  profileP.appendChild(profileA);
+  cardInfoDiv.append(
+    nameH3,
+    userNameP,
+    locationP,
+    profileP,
+
+    followersP,
+    followingP,
+    bioP
+  );
+
+  return cardDiv;
+}
 
 /* List of LS Instructors Github username's: 
   tetondan
