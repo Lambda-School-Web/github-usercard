@@ -90,36 +90,57 @@ function createCard(data) {
   const followersP = document.createElement("p");
   const followingP = document.createElement("p");
   const bioP = document.createElement("p");
+  const repoContainer = document.createElement("div");
+  const repoTitle = document.createElement("p");
+  const expandSpan = document.createElement("span");
 
   cardDiv.classList.add("card");
   cardInfoDiv.classList.add("card-info");
   nameH3.classList.add("name");
   userNameP.classList.add("username");
+  repoContainer.classList.add("repo-card");
+  expandSpan.classList.add("expandButton");
+  repoTitle.classList.add("repo-title");
 
   cardImg.src = data.avatar_url;
   nameH3.textContent = data.name;
   userNameP.textContent = data.login;
-  locationP.textContent = `Location: ${data.location}`;
+  locationP.textContent = `Location: ${data.location || "N/A"}`;
   profileP.textContent = "Profile: ";
   profileA.textContent = data.html_url;
   profileA.href = data.html_url;
   followersP.textContent = `Followers: ${data.followers}`;
   followingP.textContent = `Following: ${data.following}`;
   bioP.textContent = data.bio;
+  expandSpan.textContent = "Expand";
+  repoTitle.textContent = `${data.name}'s most recently updated repositories:`;
 
-  cardDiv.append(cardImg, cardInfoDiv);
-  profileP.appendChild(profileA);
+  cardDiv.append(cardImg, cardInfoDiv, expandSpan);
+  profileP.append(profileA);
   cardInfoDiv.append(
     nameH3,
     userNameP,
     locationP,
     profileP,
-
     followersP,
     followingP,
-    bioP
+    bioP,
+    repoContainer
   );
+  repoContainer.append(repoTitle);
 
+  //eventListener for expand/collapse button
+  expandSpan.addEventListener("click", e => {
+    if (cardDiv.classList.contains("card-expanded")) {
+      cardDiv.classList.remove("card-expanded");
+      expandSpan.textContent = "Expand";
+    } else {
+      cardDiv.classList.add("card-expanded");
+      expandSpan.textContent = "Collapse";
+    }
+  });
+
+  //Add 5 most recently updated repos
   axios
     .get(`https://api.github.com/users/${data.login}/repos`)
     .then(res => {
@@ -129,7 +150,7 @@ function createCard(data) {
       });
       sortedRepoArray.slice(0, 5).forEach(repo => {
         const newRepo = createRepoCard(repo);
-        cardDiv.appendChild(newRepo);
+        repoContainer.append(newRepo);
       });
     })
     .catch(err => console.log(err));
@@ -159,16 +180,20 @@ const calendar = new GitHubCalendar(".calendar", "tetondan", {
 //Expanding card stuff
 function createRepoCard(data) {
   const repoDiv = document.createElement("div");
+
   const repoName = document.createElement("p");
   const repoLink = document.createElement("a");
   const repoUpdated = document.createElement("p");
 
-  //cardDiv.classList.add("card");
+  repoDiv.classList.add("repo-info");
+  repoLink.classList.add("repo-link");
+  repoUpdated.classList.add("repo-updated");
 
   repoName.text = "Repository Name: ";
   repoLink.href = data.html_url;
   repoLink.textContent = data.name;
-  repoUpdated.textContent = `Last Updated: ${data.updated_at}`;
+  const newDate = new Date(data.updated_at).toDateString();
+  repoUpdated.textContent = `Last Updated: ${newDate}`;
 
   repoName.append(repoLink);
   repoDiv.append(repoName, repoUpdated);
