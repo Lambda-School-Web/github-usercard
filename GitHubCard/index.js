@@ -2,17 +2,30 @@
            (replacing the palceholder with your Github name):
            https://api.github.com/users/<your name>
 */
-
+//const data = axios.get("https://api.github.com/users/jambis");
 /* Step 2: Inspect and study the data coming back, this is YOUR 
    github info! You will need to understand the structure of this 
    data in order to use it to build your component function 
 
    Skip to Step 3.
 */
+//console.log(data);
 
 /* Step 4: Pass the data received from Github into your function, 
            create a new component and add it to the DOM as a child of .cards
 */
+const cardsDiv = document.querySelector(".cards");
+const baseURL = "https://api.github.com/users/tetondan";
+
+axios
+  .get(baseURL)
+  .then(res => {
+    const newCard = createCard(res.data);
+    cardsDiv.appendChild(newCard);
+  })
+  .catch(err => {
+    console.log("The data was not returned", err);
+  });
 
 /* Step 5: Now that you have your own card getting added to the DOM, either 
           follow this link in your browser https://api.github.com/users/<Your github name>/followers 
@@ -24,8 +37,27 @@
           user, and adding that card to the DOM.
 */
 
-const followersArray = [];
-
+axios
+  .get(`${baseURL}/followers`)
+  .then(res => {
+    const followersArray = [...res.data];
+    followersArray.forEach(follower => {
+      axios
+        .get(follower.url)
+        .then(res => {
+          const newFollower = createCard(res.data);
+          cardsDiv.appendChild(newFollower);
+        })
+        .catch(err => {
+          console.log("The follower data was not returned", err);
+        });
+    });
+    // const newCard = createCard(res.data);
+    // cardsDiv.appendChild(newCard);
+  })
+  .catch(err => {
+    console.log("The data was not returned", err);
+  });
 /* Step 3: Create a function that accepts a single object as its only argument,
           Using DOM methods and properties, create a component that will return the following DOM element:
 
@@ -46,6 +78,86 @@ const followersArray = [];
 
 */
 
+function createCard(data) {
+  const cardDiv = document.createElement("div");
+  const cardImg = document.createElement("img");
+  const cardInfoDiv = document.createElement("div");
+  const nameH3 = document.createElement("h3");
+  const userNameP = document.createElement("p");
+  const locationP = document.createElement("p");
+  const profileP = document.createElement("p");
+  const profileA = document.createElement("a");
+  const followersP = document.createElement("p");
+  const followingP = document.createElement("p");
+  const bioP = document.createElement("p");
+  const repoContainer = document.createElement("div");
+  const repoTitle = document.createElement("p");
+  const expandSpan = document.createElement("span");
+
+  cardDiv.classList.add("card");
+  cardInfoDiv.classList.add("card-info");
+  nameH3.classList.add("name");
+  userNameP.classList.add("username");
+  repoContainer.classList.add("repo-card");
+  expandSpan.classList.add("expandButton");
+  repoTitle.classList.add("repo-title");
+
+  cardImg.src = data.avatar_url;
+  nameH3.textContent = data.name;
+  userNameP.textContent = data.login;
+  locationP.textContent = `Location: ${data.location || "N/A"}`;
+  profileP.textContent = "Profile: ";
+  profileA.textContent = data.html_url;
+  profileA.href = data.html_url;
+  followersP.textContent = `Followers: ${data.followers}`;
+  followingP.textContent = `Following: ${data.following}`;
+  bioP.textContent = data.bio;
+  expandSpan.textContent = "Expand";
+  repoTitle.textContent = `${data.name}'s most recently updated repositories:`;
+
+  cardDiv.append(cardImg, cardInfoDiv, expandSpan);
+  profileP.append(profileA);
+  cardInfoDiv.append(
+    nameH3,
+    userNameP,
+    locationP,
+    profileP,
+    followersP,
+    followingP,
+    bioP,
+    repoContainer
+  );
+  repoContainer.append(repoTitle);
+
+  //eventListener for expand/collapse button
+  expandSpan.addEventListener("click", e => {
+    if (cardDiv.classList.contains("card-expanded")) {
+      cardDiv.classList.remove("card-expanded");
+      expandSpan.textContent = "Expand";
+    } else {
+      cardDiv.classList.add("card-expanded");
+      expandSpan.textContent = "Collapse";
+    }
+  });
+
+  //Add 5 most recently updated repos
+  axios
+    .get(`https://api.github.com/users/${data.login}/repos`)
+    .then(res => {
+      let repoArray = [...res.data];
+      let sortedRepoArray = repoArray.sort((a, b) => {
+        return Date.parse(b.updated_at) - Date.parse(a.updated_at);
+      });
+      sortedRepoArray.slice(0, 5).forEach(repo => {
+        const newRepo = createRepoCard(repo);
+        repoContainer.append(newRepo);
+      });
+    })
+    .catch(err => console.log(err));
+
+  return cardDiv;
+}
+
 /* List of LS Instructors Github username's: 
   tetondan
   dustinmyers
@@ -53,3 +165,38 @@ const followersArray = [];
   luishrd
   bigknell
 */
+
+//Calendar stuff
+const calendarDiv = document.createElement("div");
+const containerDiv = document.querySelector(".container");
+
+calendarDiv.classList.add("calendar");
+containerDiv.insertBefore(calendarDiv, cardsDiv);
+
+const calendar = new GitHubCalendar(".calendar", "tetondan", {
+  responsive: true
+});
+
+//Expanding card stuff
+function createRepoCard(data) {
+  const repoDiv = document.createElement("div");
+
+  const repoName = document.createElement("p");
+  const repoLink = document.createElement("a");
+  const repoUpdated = document.createElement("p");
+
+  repoDiv.classList.add("repo-info");
+  repoLink.classList.add("repo-link");
+  repoUpdated.classList.add("repo-updated");
+
+  repoName.text = "Repository Name: ";
+  repoLink.href = data.html_url;
+  repoLink.textContent = data.name;
+  const newDate = new Date(data.updated_at).toDateString();
+  repoUpdated.textContent = `Last Updated: ${newDate}`;
+
+  repoName.append(repoLink);
+  repoDiv.append(repoName, repoUpdated);
+
+  return repoDiv;
+}
